@@ -1,24 +1,19 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
+	"src/main/src/receiptService"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	fmt.Println("hello seaman")
 	r := gin.Default()
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "pong",
-		})
+	r.GET("/ping", func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, gin.H{"message": "pong"})
 	})
-	r.GET("/", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, gin.H{
-			"msg": "akjdbhfhkabsdjkhabsd",
-		})
-	})
+	r.GET("/:id/points", receiptService.HandleGetRewardPoints)
+	r.POST("/receipt", receiptService.HandleProcessReceipt)
+
 	r.Run()
 }
