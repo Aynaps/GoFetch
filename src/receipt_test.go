@@ -6,39 +6,6 @@ import (
 	"testing"
 )
 
-/*
-		type Receipt struct {
-			Retailer     string  `json:"retailer" binding:"required"`
-			PurchaseDate string  `json:"purchaseDate" binding:"required"`
-			PurchaseTime string  `json:"purchaseTime" binding:"required"`
-			Items        []*Item `json:"items" binding:"required"`
-			Total        float64 `json:"total,string" binding:"required"`
-		}
-		{
-	  "retailer": "Target",
-	  "purchaseDate": "2022-01-01",
-	  "purchaseTime": "13:01",
-	  "items": [
-	    {
-	      "shortDescription": "Mountain Dew 12PK",
-	      "price": "6.49"
-	    },{
-	      "shortDescription": "Emils Cheese Pizza",
-	      "price": "12.25"
-	    },{
-	      "shortDescription": "Knorr Creamy Chicken",
-	      "price": "1.26"
-	    },{
-	      "shortDescription": "Doritos Nacho Cheese",
-	      "price": "3.35"
-	    },{
-	      "shortDescription": "   Klarbrunn 12-PK 12 FL OZ  ",
-	      "price": "12.00"
-	    }
-	  ],
-	  "total": "35.35"
-	}
-*/
 func TestPointsTotal(t *testing.T) {
 	items := []models.Item{
 		{ShortDescription: "Mountain Dew 12PK", Price: 6.49},
@@ -48,9 +15,39 @@ func TestPointsTotal(t *testing.T) {
 		{ShortDescription: "   Klarbrunn 12-PK 12 FL OZ  ", Price: 12.00},
 	}
 	var r = models.Receipt{Retailer: "Target", PurchaseDate: "2022-01-01", PurchaseTime: "13:01", Items: items, Total: 35.35}
-	got := receiptService.AccumulatePoints(r)
+	date, time, _ := receiptService.ParseDateTime(r.PurchaseDate, r.PurchaseTime)
+	got := receiptService.CalculatePoints(r, date, time)
 	want := 28
 	if got != want {
 		t.Fatalf(`Wanted %d, Got %d`, want, got)
+	}
+}
+func TestExample2(t *testing.T) {
+	items := []models.Item{
+		{ShortDescription: "Gatorade", Price: 2.25},
+		{ShortDescription: "Gatorade", Price: 2.25},
+		{ShortDescription: "Gatorade", Price: 2.25},
+		{ShortDescription: "Gatorade", Price: 2.25},
+	}
+	var r = models.Receipt{Retailer: "M&M Corner Market", PurchaseDate: "2022-03-20", PurchaseTime: "14:33", Items: items, Total: 9.00}
+	date, time, _ := receiptService.ParseDateTime(r.PurchaseDate, r.PurchaseTime)
+	got := receiptService.CalculatePoints(r, date, time)
+	want := 109
+	if got != want {
+		t.Fatalf(`Wanted %d, Got %d`, want, got)
+	}
+}
+func TestInvalidDateTime(t *testing.T) {
+	items := []models.Item{
+		{ShortDescription: "Gatorade", Price: 2.25},
+		{ShortDescription: "Gatorade", Price: 2.25},
+		{ShortDescription: "Gatorade", Price: 2.25},
+		{ShortDescription: "Gatorade", Price: 2.25},
+	}
+	var r = models.Receipt{Retailer: "M&M Corner Market", PurchaseDate: "2022-03-20:12:12", PurchaseTime: "14:33", Items: items, Total: 9.00}
+	_, _, err := receiptService.ParseDateTime(r.PurchaseDate, r.PurchaseTime)
+
+	if err == nil {
+		t.Fatalf(`Date time parser was suppose to fail on %s and %s`, r.PurchaseDate, r.PurchaseTime)
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"math"
 	"net/http"
 	"src/main/src/models"
+	"strings"
 	"time"
 	"unicode"
 
@@ -36,31 +37,30 @@ func HandleProcessReceipt(ctx *gin.Context) {
 }
 
 func HandleGetRewardPoints(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, gin.H{
-		"msg": "not yet implemented",
-	})
+	var json models.UserID
+	if err := ctx.ShouldBindJSON(&json); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Request"})
+	}
+	if mockDataBase[json.ID] == 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"msg": "Unknown UUID"})
+	} else {
+		ctx.JSON(http.StatusOK, gin.H{"points": mockDataBase[json.ID]})
+	}
 }
 
 func processReceipt(json models.Receipt) (uuid.UUID, error) {
-	fmt.Println(json.String())
-	//validate purchaseDate is yyyy-mm-dd
-	date, err := time.Parse(time.DateOnly, json.PurchaseDate)
-	fmt.Print(date)
+	purchaseDate, purchaseTime, err := ParseDateTime(json.PurchaseDate, json.PurchaseTime)
 	if err != nil {
 		return uuid.Nil, err
 	}
-	//validate purchaseTime is hh:mm
-	time, err := time.Parse(HHMM, json.PurchaseTime)
-	fmt.Print(time)
-	if err != nil {
-		return uuid.Nil, err
-	}
-	var pointSum = AccumulatePoints(json)
-	fmt.Printf("points: %d\n", pointSum)
-	return uuid.New(), nil
+	var pointSum = CalculatePoints(json, purchaseDate, purchaseTime)
+	var newUUID = uuid.New()
+	mockDataBase[newUUID] = pointSum
+	return newUUID, nil
 }
 
-func AccumulatePoints(r models.Receipt) int {
+func CalculatePoints(r models.Receipt, purchaseDate *time.Time, purchaseTime *time.Time) int {
+
 	var sum = 0
 	/*
 		1. One point for every alphanumeric character in the retailer name.
@@ -77,11 +77,40 @@ func AccumulatePoints(r models.Receipt) int {
 			sum++
 		}
 	}
+
 	if r.Total == math.Trunc(r.Total) {
 		sum += 50
 	}
 	if math.Mod(r.Total, 0.25) == 0 {
 		sum += 25
 	}
+	sum += (len(r.Items) / 2) * 5
+	for _, item := range r.Items {
+		if (len(strings.TrimSpace(item.ShortDescription)) % 3) == 0 {
+			sum += int(math.Ceil(item.Price * 0.2))
+		}
+	}
+	if (purchaseDate.Day() % 2) != 0 {
+		sum += 6
+	}
+	if purchaseTime.After(TWOPM) && purchaseTime.Before(FOURPM) {
+		sum += 10
+	}
 	return sum
+}
+
+func ParseDateTime(date string, clockTime string) (*time.Time, *time.Time, error) {
+	//validate purchaseDate is yyyy-mm-dd
+	parsedDate, err := time.Parse(time.DateOnly, date)
+	fmt.Print(date)
+	if err != nil {
+		return nil, nil, err
+	}
+	//validate purchaseTime is hh:mm
+	time, err := time.Parse(HHMM, clockTime)
+	fmt.Print(time)
+	if err != nil {
+		return nil, nil, err
+	}
+	return &parsedDate, &time, nil
 }
