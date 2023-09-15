@@ -49,17 +49,17 @@ func HandleGetRewardPoints(ctx *gin.Context) {
 }
 
 func processReceipt(json models.Receipt) (uuid.UUID, error) {
-	purchaseDate, purchaseTime, err := ParseDateTime(json.PurchaseDate, json.PurchaseTime)
+	purchaseDate, purchaseTime, err := parseDateTime(json.PurchaseDate, json.PurchaseTime)
 	if err != nil {
 		return uuid.Nil, err
 	}
-	var pointSum = CalculatePoints(json, purchaseDate, purchaseTime)
+	var pointSum = calculatePoints(json, purchaseDate, purchaseTime)
 	var newUUID = uuid.New()
 	mockDataBase[newUUID] = pointSum
 	return newUUID, nil
 }
 
-func CalculatePoints(r models.Receipt, purchaseDate *time.Time, purchaseTime *time.Time) int {
+func calculatePoints(r models.Receipt, purchaseDate *time.Time, purchaseTime *time.Time) int {
 
 	var sum = 0
 	/*
@@ -99,16 +99,16 @@ func CalculatePoints(r models.Receipt, purchaseDate *time.Time, purchaseTime *ti
 	return sum
 }
 
-func ParseDateTime(date string, clockTime string) (*time.Time, *time.Time, error) {
+func parseDateTime(date string, clockTime string) (*time.Time, *time.Time, error) {
 	//validate purchaseDate is yyyy-mm-dd
 	parsedDate, err := time.Parse(time.DateOnly, date)
-	fmt.Print(date)
+
 	if err != nil {
 		return nil, nil, err
 	}
 	//validate purchaseTime is hh:mm
 	time, err := time.Parse(HHMM, clockTime)
-	fmt.Print(time)
+
 	if err != nil {
 		return nil, nil, err
 	}
