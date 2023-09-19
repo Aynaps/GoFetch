@@ -13,7 +13,7 @@ func main() {
 		ctx.JSON(http.StatusOK, gin.H{"message": "pong"})
 	})
 	r.GET("/:id/points", receiptService.HandleGetRewardPoints)
-	r.POST("/receipt", receiptService.HandleProcessReceipt)
+	r.POST("/receipts/process", receiptService.HandleProcessReceipt)
 
 	r.Run()
 }
