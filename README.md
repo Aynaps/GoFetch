@@ -9,7 +9,7 @@ Version go 1.21.1
 
 # How to Run
 1. Pull down the repo with ssh or https
-2. run ```go get .``` to install the dependencies in the go.mod file
+2. run ```go mod download``` to install the dependencies in the go.mod file
 2. cd into the src directory
 3. run the main.go file with `go run main.go`
 4. now the two API endpoints `/receipts/process` and `:id/points` are open for requests listening on port 8080
